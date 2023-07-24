@@ -60,21 +60,26 @@ This class has a precedence of 0.All other classes created in this lab inherits 
 VAR and NUM subclasses:<br/>
 I assigned Var and Num to have a precedence of 3. Instances of Var represent variables (such as x or y) whilst instances of Num represent numbers within symbolic expressions. The following class is given <br/>
 1. Var: <br/>
+    
     def __init__(self, n):
         self.name = n
     def __str__(self):
         return self.name
     def __repr__(self):
         return f"Var('{self.name}')"
-2. Num: <br/>
+<br/>
+2. Num:<br/>
+
     def __init__(self, n):
         self.n = n
+
     def __str__(self):
         return str(self.n)
+
     def __repr__(self):
         return f"Num({self.n})"
-
 <br/>
+
 <p align="left">
 BINARY OPERATIONS:<br/>
 BinOp has precedence 0. This class, BinOp represents a binary operation. It is a type of symbolic expression and is therefore a subclass of Symbol. By virtue of being binary operations, any subclass of BinOp has two instance variables: left - a Symbol instance representing the left-hand operand, and right - a Symbol instance representing the right-hand operand. Importantly, instances or subclasses of BinOp should only have these two instance attributes. We consider parenthesisation rules with each operation's precedence defined using the standard "PEMDAS" ordering.<br/>
@@ -130,7 +135,7 @@ BinOp has precedence 0. This class, BinOp represents a binary operation. It is a
 <br/>
 <p align="left">
 Create BinOp SUBCLASSES:<br/>
-Addition and Subtraction have precedence of 1. Multiplication, Division and Exponentiation have precedence of 2. 
+Addition and Subtraction have precedence of 1. Multiplication, Division and Exponentiation have precedence of 2.  <br/>
 1. Add: E1 + E2 results in an instance Add(E1, E2) <br/>
    
     operand = "+"
@@ -171,30 +176,51 @@ EVALUATION:<br/>
 Next, I have added support for evaluating expressions for particular values of variables. In doing this, I added methods to various classes or subclasses such that, for any symbolic expression sym, sym.eval(mapping) will find a numerical value (meaning a float or an int, not an instance of Num) for the given expression. This mapping is a dictionary mapping variable names to values.<br/>
 
 1. Symbol:<br/>
-    def eval(self, mapping):
-        if self.operand == "+":
-            return self.left.eval(mapping) + self.right.eval(mapping)
-        elif self.operand == "-":
-            return self.left.eval(mapping) - self.right.eval(mapping)
-        elif self.operand == "*":
-            return self.left.eval(mapping) * self.right.eval(mapping)
-        elif self.operand == "/":  # /
-            return self.left.eval(mapping) / self.right.eval(mapping)
-        elif self.operand == "**":  # /
-            return self.left.eval(mapping) ** self.right.eval(mapping)
+
+        def eval(self, mapping):
+            if self.operand == "+":
+                return self.left.eval(mapping) + self.right.eval(mapping)
+            elif self.operand == "-":
+                return self.left.eval(mapping) - self.right.eval(mapping)
+            elif self.operand == "*":
+                return self.left.eval(mapping) * self.right.eval(mapping)
+            elif self.operand == "/":  # /
+                return self.left.eval(mapping) / self.right.eval(mapping)
+            elif self.operand == "**":  # /
+                return self.left.eval(mapping) ** self.right.eval(mapping)
+
 <br/>
 2. Var:<br/>
+
     def eval(self, mapping):  # base case
         if self.name not in mapping:
             raise NameError
         return mapping[self.name]
 <br/>
 3. Num:<br/>
+
     def eval(self, mapping):  # base case iof eval
         return self.n
+   
 <br/>
 
+<p align="left">
+EQUALITY:<br/>
+I added support for checking if two expressions are equal. In doing this, I added methods to the following subclasses<br/>
 
+1. Var:<br/>
+    def __eq__(self, other):
+            if (
+                isinstance(self, type(other)) and self.name == other.name
+            ):  # check same class and contents
+                return True
+            return False
+<br/>
+2. Num: <br/>
+
+<br/>
+3. BinOp: <br/>
+<br/>
 - simplify: returns a simplified form of the expression, according to the following rules:<br/>
 <p align="center">
   Any binary operation on two numbers simplifies to a single number containing the result.<br/>
