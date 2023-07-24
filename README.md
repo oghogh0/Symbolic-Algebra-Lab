@@ -405,7 +405,7 @@ Undergoes derivation of different expressions. I added this method to the follow
 <br/>
 <p align="left">
 EXPRESSIONS:<br/>   
-Lastly, I have added support to parse strings into symbolic expressions (to provide yet another means of input). It takes in a single string containing either a single variable name, a single number, or a fully parenthesised expression of the form (E1 op E2), representing a binary operation (where E1 and E2 are themselves strings representing expressions, and op is one of +, -, *, or /). An assumption made is that the string is always well-formed and fully parenthesised (don't need to handle erroneous input), but it works for arbitrarily deep nesting of expressions.<br/> 
+Lastly, I have added support to parse strings into symbolic expressions (to provide yet another means of input). It takes in a single string containing either a single variable name, a single number, or a fully parenthesised expression of the form (E1 op E2), representing a binary operation (where E1 and E2 are themselves strings representing expressions, and op is one of +, -, *, or /). An assumption made is that the string is always well-formed and fully parenthesised (don't need to handle erroneous input), but it works for arbitrarily deep nesting of expressions. The implementation of this function expression does not use Python's built-in eval, exec, type, or isinstance functions.<br/> 
     
 This process is broken down into two pieces: tokenising (to break the input string into meaningful units) and parsing (to build our internal representation from those units). <br/> 
 
@@ -448,27 +448,55 @@ For example, calling tokenize("(x * (2 + 3))") returns:<br/>
 For example, calling parse(tokenize("(x * (2 + 3))")) returns:<br/> 
 <br/>
 Mul(Var('x'), Add(Num(2), Num(3)))
+<br/> 
+For this function, I created a helper function 'find_class', which determines a class given its corresponding operand.<br/> 
+
+    if operand == "+":
+        return Add
+    elif operand == "-":
+        return Sub
+    elif operand == "*":
+        return Mul
+    elif operand == "/":
+        return Div
+    else:  # "**"
+        return Pow
+
+Another function called 'parse_expression' is defined in the 'parse' function. It is a recursive function that takes in an integer indexing into the tokens list and returns a pair of values. The expression found starting at the location given by index (an instance of one of the Symbol subclasses), and the index beyond where this expression ends (e.g., if the expression ends at the token with index 6 in the tokens list, then the returned value should be 7). In the definition of this procedure, it is important to call it with the value index corresponding to the start of an expression. So, there are 3 cases that need to be handled. Let token be the token at location index; the cases are:<br/> 
+
+1. Number: if token represents an integer or a float, then make a corresponding Num instance and return that, paired with index + 1 (since a number is represented by a single token).<br/> 
+2. Variable: if token represents a variable name (a single alphabetic character), then make a corresponding Var instance and return that, paired with index + 1 (since a variable is represented by a single token).<br/> 
+3. Operation: otherwise, the sequence of tokens starting at index must be of the form: (E1 op E2). Therefore, token must be (. In this case, recursively parse the two subexpressions, combine them into an appropriate instance of a subclass of BinOp (determined by op), and return that instance, along with the index of the token beyond the final right parenthesis.<br/> 
 
 
-The function parse_expression is a recursive function that takes as an argument an integer indexing into the tokens list and returns a pair of values:
-the expression found starting at the location given by index (an instance of one of the Symbol subclasses), and
-the index beyond where this expression ends (e.g., if the expression ends at the token with index 6 in the tokens list, then the returned value should be 7).
-In the definition of this procedure, we make sure that we call it with the value index corresponding to the start of an expression. So, we need to handle three cases. Let token be the token at location index; the cases are:
-Number: If token represents an integer or a float, then make a corresponding Num instance and return that, paired with index + 1 (since a number is represented by a single token).
-Variable: If token represents a variable name (a single alphabetic character), then make a corresponding Var instance and return that, paired with index + 1 (since a variable is represented by a single token).
-Operation: Otherwise, the sequence of tokens starting at index must be of the form: (E1 op E2). Therefore, token must be (. In this case, we need to recursively parse the two subexpressions, combine them into an appropriate instance of a subclass of BinOp (determined by op), and return that instance, along with the index of the token beyond the final right parenthesis.
-Implement the expression function in your code (possibly using the helper functions described above). Your implementation of the function expression should not use Python's built-in eval, exec, type, or isinstance functions.
-However, you can try to cast a string to a float:
->>> float("1")
-1.0
->>> float("-6.5")
--6.5
->>> float("x")
-...
-ValueError: could not convert string to float: 'x'
+        def parse_expression(index):
+            """
+            Takes an integer indexing into the tokens list and
+            returns a pair of values
+            """
+            current = tokens[index]
+    
+            # recursive case
+            if current == "(":
+                expression_1, operand_index = parse_expression(index + 1)  # parse next expression
+                expression_2, close_paren_index = parse_expression(operand_index + 1)
+    
+                return find_class(tokens[operand_index])(expression_1, expression_2), close_paren_index + 1
+    
+            # base cases
+            else:
+                try:
+                    return Num(float(current)), index + 1
+                except:
+                    return Var(current), index + 1
+    
+        parsed_expression, next_index = parse_expression(0)
+        return parsed_expression
+    
+<br/> 
+The code for 'expression' looks like this:
 
-
-
+     return parse(tokenize(statement))
 
 
 
