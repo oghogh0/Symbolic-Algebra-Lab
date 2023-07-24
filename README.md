@@ -344,8 +344,7 @@ I added this method to the following subclasses:<br/>
 <br/>
 <p align="left">
 DERIVATION:<br/>
-
-I added this method to the following subclasses:<br/>
+Undergoes derivation of different expressions. I added this method to the following subclasses:<br/>
 1. Var:<br/>
     
         def deriv(self, item):
@@ -404,5 +403,76 @@ I added this method to the following subclasses:<br/>
                 )
             raise TypeError
 <br/>
+<p align="left">
+EXPRESSIONS:<br/>   
+Lastly, I have added support to parse strings into symbolic expressions (to provide yet another means of input). It takes in a single string containing either a single variable name, a single number, or a fully parenthesised expression of the form (E1 op E2), representing a binary operation (where E1 and E2 are themselves strings representing expressions, and op is one of +, -, *, or /). An assumption made is that the string is always well-formed and fully parenthesised (don't need to handle erroneous input), but it works for arbitrarily deep nesting of expressions.<br/> 
     
+This process is broken down into two pieces: tokenising (to break the input string into meaningful units) and parsing (to build our internal representation from those units). <br/> 
+
+For example, calling expression('(x * (2 + 3))') parses to Mul(Var('x'), Add(Num(2), Num(3))).<br/> 
+
+1. Tokenising: takes in a string as described above and outputs a list of meaningful tokens (parentheses, variable names, numbers, or operands). An assumption made is that variables are always single-character alphabetic characters and that all numbers are positive or negative integers or floats. Also assume that there are spaces separating operands and operators. This code also handles numbers with more than one digit and negative numbers. A number like -200.5, for example, should be represented by a single token '-200.5'.<br/> 
+
+For example, calling tokenize("(x * (2 + 3))") returns:<br/> 
+<br/>
+['(', 'x', '*', '(', '2', '+', '3', ')', ')']
+
+    statement_lst = []
+
+    indx = 0
+    while indx != len(statement):  # not
+        # indx = 0
+        item = statement[indx]
+
+        if item == " ":
+            indx += 1
+            continue
+        elif item in "()":
+            indx += 1
+            statement_lst.append(item)
+        else:
+            buffer = ""
+            while indx != len(statement) and statement[indx] not in "( )":
+
+                item = statement[indx]
+                print(item)
+                buffer += item
+
+                indx += 1
+            print(buffer)
+            statement_lst.append(buffer)
+    return statement_lst
+<br/> 
+2. Parsing: takes in the output of tokenize, converting it into an appropriate instance of Symbol (or some subclass thereof).<br/> 
+
+For example, calling parse(tokenize("(x * (2 + 3))")) returns:<br/> 
+<br/>
+Mul(Var('x'), Add(Num(2), Num(3)))
+
+
+The function parse_expression is a recursive function that takes as an argument an integer indexing into the tokens list and returns a pair of values:
+the expression found starting at the location given by index (an instance of one of the Symbol subclasses), and
+the index beyond where this expression ends (e.g., if the expression ends at the token with index 6 in the tokens list, then the returned value should be 7).
+In the definition of this procedure, we make sure that we call it with the value index corresponding to the start of an expression. So, we need to handle three cases. Let token be the token at location index; the cases are:
+Number: If token represents an integer or a float, then make a corresponding Num instance and return that, paired with index + 1 (since a number is represented by a single token).
+Variable: If token represents a variable name (a single alphabetic character), then make a corresponding Var instance and return that, paired with index + 1 (since a variable is represented by a single token).
+Operation: Otherwise, the sequence of tokens starting at index must be of the form: (E1 op E2). Therefore, token must be (. In this case, we need to recursively parse the two subexpressions, combine them into an appropriate instance of a subclass of BinOp (determined by op), and return that instance, along with the index of the token beyond the final right parenthesis.
+Implement the expression function in your code (possibly using the helper functions described above). Your implementation of the function expression should not use Python's built-in eval, exec, type, or isinstance functions.
+However, you can try to cast a string to a float:
+>>> float("1")
+1.0
+>>> float("-6.5")
+-6.5
+>>> float("x")
+...
+ValueError: could not convert string to float: 'x'
+
+
+
+
+
+
+
+
+
 
