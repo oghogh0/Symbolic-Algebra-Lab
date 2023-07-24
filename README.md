@@ -209,18 +209,33 @@ EQUALITY:<br/>
 I added support for checking if two expressions are equal. In doing this, I added methods to the following subclasses<br/>
 
 1. Var:<br/>
-    def __eq__(self, other):
+
+       def __eq__(self, other):
             if (
                 isinstance(self, type(other)) and self.name == other.name
             ):  # check same class and contents
                 return True
             return False
 <br/>
-2. Num: <br/>
+3. Num: <br/>
 
+        def __eq__(self, other):
+            if isinstance(self, type(other)) and self.n == other.n:
+                return True
+            return False
 <br/>
 3. BinOp: <br/>
+  
+        def __eq__(self, other):
+            if (
+                isinstance(self, type(other))
+                and self.left == other.left
+                and self.right == other.right
+            ):
+                return True
+            return False
 <br/>
+
 - simplify: returns a simplified form of the expression, according to the following rules:<br/>
 <p align="center">
   Any binary operation on two numbers simplifies to a single number containing the result.<br/>
@@ -240,13 +255,6 @@ class Symbol:
 class Var(Symbol):
     
 
-    def __eq__(self, other):
-        if (
-            isinstance(self, type(other)) and self.name == other.name
-        ):  # check same class and contents
-            return True
-        return False
-
     def deriv(self, item):
         if self.name == item:  # base case 1
             return Num(1)
@@ -255,27 +263,8 @@ class Var(Symbol):
 
 class Num(Symbol):
 
-
-    def __eq__(self, other):
-        if isinstance(self, type(other)) and self.n == other.n:
-            return True
-        return False
-
     def deriv(self, item):
         return Num(0)  # base case 2
-
-
-# subclass of Symbol
-class BinOp(Symbol):
-    
-    def __eq__(self, other):
-        if (
-            isinstance(self, type(other))
-            and self.left == other.left
-            and self.right == other.right
-        ):
-            return True
-        return False
 
 
 # subclasses of BinOp
