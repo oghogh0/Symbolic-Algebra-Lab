@@ -2,7 +2,7 @@
 <h2>Description</h2>
 In this lab, I develop a Python framework for symbolic algebra. In such a system, algebraic expressions including variables and numbers are not immediately evaluated but rather are stored in symbolic form. These kinds of systems abound in the "real world," and they can be incredibly useful. Examples of similar systems include Wolfram Alpha and Sympy. <br /> 
 
-I'll start by implementing support for basic arithmetic (+, -, *, and /) on variables and numbers, and then add support for simplification and differentiation of these symbolic expressions. Ultimately, this system will be able to support numerous interactions as shown below. <br />
+I'll start by implementing support for basic arithmetic (+, -, *, and /) on variables and numbers, and then add support for simplification and differentiation of these symbolic expressions. Ultimately, this system will be able to support numerous interactions as shown below. Each operation's precedence is defined using the standard "PEMDAS" ordering. A higher precedence value indicates a hgiher precedence. <br />
 
 <h2>Languages and Environments Used</h2>
 
@@ -16,7 +16,7 @@ Create the BASE CLASS, 'Symbol':<br/>
 This class has a precedence of 0.All other classes created in this lab inherits from this class, and any behaviour that is common between all expressions (that is, all behaviour that is not unique to a particular kind of symbolic expression) is implemented here. Such behaviours include:<br/>
 - addition & subtraction<br/>
 - multiplication & division<br/>
-- indices<br/>
+- exponentiation<br/>
     
     precedence = 0
     right_parens = False
@@ -130,7 +130,69 @@ BinOp has precedence 0. This class, BinOp represents a binary operation. It is a
 <br/>
 <p align="left">
 Create BinOp SUBCLASSES:<br/>
-1. Add: 
+Addition and Subtraction have precedence of 1. Multiplication, Division and Exponentiation have precedence of 2. 
+1. Add: E1 + E2 results in an instance Add(E1, E2) <br/>
+   
+    operand = "+"
+    precedence = 1
+    right_parens = False
+    left_parens = False
+<br/>
+2. Subtract: E1 - E2 results in an instance Sub(E1, E2)<br/>
+
+    operand = "-"
+    precedence = 1
+    right_parens = True
+    left_parens = False
+<br/>
+3. Multiplication: E1 * E2 results in an instance Mul(E1, E2)<br/>
+
+    operand = "*"
+    precedence = 2
+    right_parens = False
+    left_parens = False
+<br/>
+4. Division: E1 / E2 results in an instance Div(E1, E2)<br/>
+
+    operand = "/"
+    precedence = 2
+    right_parens = True
+    left_parens = False
+<br/>
+5. Exponentiation: E1 ** E2 results in an instance Pow(E1, E2)<br/>
+
+    operand = "**"
+    precedence = 2
+    right_parens = False
+    left_parens = True 
+<br/>
+<p align="left">
+EVALUATION:<br/>
+Next, I have added support for evaluating expressions for particular values of variables. In doing this, I added methods to various classes or subclasses such that, for any symbolic expression sym, sym.eval(mapping) will find a numerical value (meaning a float or an int, not an instance of Num) for the given expression. This mapping is a dictionary mapping variable names to values.<br/>
+
+1. Symbol:<br/>
+    def eval(self, mapping):
+        if self.operand == "+":
+            return self.left.eval(mapping) + self.right.eval(mapping)
+        elif self.operand == "-":
+            return self.left.eval(mapping) - self.right.eval(mapping)
+        elif self.operand == "*":
+            return self.left.eval(mapping) * self.right.eval(mapping)
+        elif self.operand == "/":  # /
+            return self.left.eval(mapping) / self.right.eval(mapping)
+        elif self.operand == "**":  # /
+            return self.left.eval(mapping) ** self.right.eval(mapping)
+<br/>
+2. Var:<br/>
+    def eval(self, mapping):  # base case
+        if self.name not in mapping:
+            raise NameError
+        return mapping[self.name]
+<br/>
+3. Num:<br/>
+    def eval(self, mapping):  # base case iof eval
+        return self.n
+<br/>
 
 
 - simplify: returns a simplified form of the expression, according to the following rules:<br/>
@@ -145,35 +207,12 @@ This function is the same for var and num so can be added as an attribute to the
 
 
 class Symbol:
-    def eval(self, mapping):
-        """
-        For any symbolic expression sym, 
-        sym.eval(mapping) will find a numerical value - a float or an int
-        (not an instance of Num) for the given expression
-        
-        Mapping is a dict mapping variable names to values.
-        """
-        if self.operand == "+":
-            return self.left.eval(mapping) + self.right.eval(mapping)
-        elif self.operand == "-":
-            return self.left.eval(mapping) - self.right.eval(mapping)
-        elif self.operand == "*":
-            return self.left.eval(mapping) * self.right.eval(mapping)
-        elif self.operand == "/":  # /
-            return self.left.eval(mapping) / self.right.eval(mapping)
-        elif self.operand == "**":  # /
-            return self.left.eval(mapping) ** self.right.eval(mapping)
-
     def simplify(self):
         return self  # var and num the same
 
 
 class Var(Symbol):
-    def eval(self, mapping):  # base case
-        if self.name not in mapping:
-            raise NameError
-
-        return mapping[self.name]
+    
 
     def __eq__(self, other):
         if (
@@ -190,8 +229,6 @@ class Var(Symbol):
 
 class Num(Symbol):
 
-    def eval(self, mapping):  # base case iof eval
-        return self.n
 
     def __eq__(self, other):
         if isinstance(self, type(other)) and self.n == other.n:
@@ -217,15 +254,6 @@ class BinOp(Symbol):
 
 # subclasses of BinOp
 class Add(BinOp):
-    """
-    Addition:
-    E1 + E2 results in an instance Add(E1, E2)
-    """
-    operand = "+"
-    precedence = 1
-    right_parens = False
-    left_parens = False
-
     def deriv(self, item):
         return Add(self.left.deriv(item), self.right.deriv(item))
 
@@ -248,15 +276,7 @@ class Add(BinOp):
 
 
 class Sub(BinOp):
-    """
-    Subtraction:
-    E1 - E2 results in an instance Sub(E1, E2)
-    """
-    operand = "-"
-    precedence = 1
-    right_parens = True
-    left_parens = False
-
+   
     def deriv(self, item):
         return Sub(self.left.deriv(item), self.right.deriv(item))
 
@@ -274,15 +294,7 @@ class Sub(BinOp):
 
 
 class Mul(BinOp):
-    """
-    Multiplication:
-    E1 * E2 results in an instance Mul(E1, E2)
-    """
-    operand = "*"
-    precedence = 2
-    right_parens = False
-    left_parens = False
-
+   
     def deriv(self, item):
         return Add(
             Mul(self.left, self.right.deriv(item)),
@@ -308,15 +320,7 @@ class Mul(BinOp):
 
 
 class Div(BinOp):
-    """
-    Division:
-    E1 / E2 results in an instance Div(E1, E2)
-    """
-    operand = "/"
-    precedence = 2
-    right_parens = True
-    left_parens = False
-
+   
     def deriv(self, item):
         return (
             Sub(
@@ -344,14 +348,7 @@ class Div(BinOp):
 
 
 class Pow(BinOp):
-    """
-    Exponentiation:
-    E1 ** E2 results in an instance Pow(E1, E2)
-    """
-    operand = "**"
-    precedence = 2
-    right_parens = False
-    left_parens = True
+    
 
     def deriv(self, item):
         if isinstance(self.right, Num):
