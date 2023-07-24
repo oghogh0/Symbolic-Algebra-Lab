@@ -206,7 +206,7 @@ Next, I have added support for evaluating expressions for particular values of v
 
 <p align="left">
 EQUALITY:<br/>
-I added support for checking if two expressions are equal. In doing this, I added methods to the following subclasses<br/>
+I added support for checking if two expressions are equal. In doing this, I added this method to the following subclasses<br/>
 
 1. Var:<br/>
 
@@ -235,159 +235,174 @@ I added support for checking if two expressions are equal. In doing this, I adde
                 return True
             return False
 <br/>
+<p align="left">
+SIMPLIFICATION:<br/>
+I have added a method called simplify to various classes, which returns a simplified form of the given expression, according to the following rules:<br/>
+- Any binary operation on two numbers simplifies to a single number containing the result.<br/>
+- Adding 0 to (or subtracting 0 from) any expression E simplifies to E.<br/>
+- Multiplying or dividing any expression E by 1 simplifies to E.<br/>
+- Multiplying any expression E by 0 simplifies to 0.<br/>
+- Dividing 0 by any expression E simplifies to 0.<br/>
+- A single number or variable always simplifies to itself.<br/>
 
-- simplify: returns a simplified form of the expression, according to the following rules:<br/>
-<p align="center">
-  Any binary operation on two numbers simplifies to a single number containing the result.<br/>
-  Adding 0 to (or subtracting 0 from) any expression E simplifies to E.<br/>
-  Multiplying or dividing any expression E by 1 simplifies to E.<br/>
-  Multiplying any expression E by 0 simplifies to 0.<br/>
-  Dividing 0 by any expression E should simplifies to 0.<br/>
-  A single number or variable always simplifies to itself.<br/>
-This function is the same for var and num so can be added as an attribute to the 'Symbol' class. 
+I added this method to the following subclasses:<br/>
+1. Symbol:<br/>
 
+        def simplify(self):
+            return self  # var and num the same
+<br/>
+2. Add: <br/>
 
-class Symbol:
-    def simplify(self):
-        return self  # var and num the same
-
-
-class Var(Symbol):
+       def simplify(self):  # always returns symbol
+            simplified_left = self.left.simplify()
+            simplified_right = self.right.simplify()
     
+            if isinstance(simplified_left, Num) and isinstance(
+                simplified_right, Num
+            ):  # add numbers
+                return Num(simplified_left.n + simplified_right.n)  # symbol
+    
+            if simplified_left == Num(0):  # if add 0
+                return simplified_right
+    
+            if simplified_right == Num(0):
+                return simplified_left
+    
+            return Add(simplified_left, simplified_right)
+<br/>
+3. Subtract:<br/>
+    
+        def simplify(self):
+            simplified_left = self.left.simplify()
+            simplified_right = self.right.simplify()
+    
+            if isinstance(simplified_left, Num) and isinstance(simplified_right, Num):
+                return Num(simplified_left.n - simplified_right.n)
+    
+            if simplified_right == Num(0):  # only simplifies on right not 0-x
+                return simplified_left
+    
+            return Sub(simplified_left, simplified_right)
 
-    def deriv(self, item):
-        if self.name == item:  # base case 1
-            return Num(1)
-        return Num(0)
+<br/>
+4. Multiply:<br/>
 
+      def simplify(self):
+            simplified_left = self.left.simplify()
+            simplified_right = self.right.simplify()
+    
+            if isinstance(simplified_left, Num) and isinstance(simplified_right, Num):
+                return Num(simplified_left.n * simplified_right.n)
+    
+            if simplified_left == Num(1):  # mul by 1
+                return simplified_right
+            if simplified_right == Num(1):
+                return simplified_left
+    
+            if simplified_left == Num(0) or simplified_right == Num(0):  # mul by 0
+                return Num(0)
+    
+            return Mul(simplified_left, simplified_right)
+<br/>
+5. Divide:<br/>
+    
+        def simplify(self):
+            simplified_left = self.left.simplify()
+            simplified_right = self.right.simplify()
+    
+            if isinstance(simplified_left, Num) and isinstance(simplified_right, Num):
+                return Num(simplified_left.n / simplified_right.n)
+    
+            if simplified_right == Num(1):  # div by 1
+                return simplified_left
+    
+            if simplified_left == Num(0):  # div by 0
+                return Num(0)
+    
+            return Div(simplified_left, simplified_right)
+<br/>
+6. Exponentiate:<br/>
 
-class Num(Symbol):
+        def simplify(self):
+                simplified_left = self.left.simplify()
+                simplified_right = self.right.simplify()
+        
+                if isinstance(simplified_left, Num) and isinstance(simplified_right, Num):
+                    return Num(simplified_left.n**simplified_right.n)
+        
+                if simplified_right == Num(0):
+                    return Num(1)
+        
+                if simplified_right == Num(1):
+                    return simplified_left
+        
+                if simplified_left == Num(0):
+                    return simplified_left
+        
+                return Pow(simplified_left, simplified_right)
 
-    def deriv(self, item):
-        return Num(0)  # base case 2
+<br/>
+<p align="left">
+DERIVATION:<br/>
 
-
-# subclasses of BinOp
-class Add(BinOp):
-    def deriv(self, item):
-        return Add(self.left.deriv(item), self.right.deriv(item))
-
-    def simplify(self):  # always returns symbol
-        simplified_left = self.left.simplify()
-        simplified_right = self.right.simplify()
-
-        if isinstance(simplified_left, Num) and isinstance(
-            simplified_right, Num
-        ):  # add numbers
-            return Num(simplified_left.n + simplified_right.n)  # symbol
-
-        if simplified_left == Num(0):  # if add 0
-            return simplified_right
-
-        if simplified_right == Num(0):
-            return simplified_left
-
-        return Add(simplified_left, simplified_right)
-
-
-class Sub(BinOp):
-   
-    def deriv(self, item):
-        return Sub(self.left.deriv(item), self.right.deriv(item))
-
-    def simplify(self):
-        simplified_left = self.left.simplify()
-        simplified_right = self.right.simplify()
-
-        if isinstance(simplified_left, Num) and isinstance(simplified_right, Num):
-            return Num(simplified_left.n - simplified_right.n)
-
-        if simplified_right == Num(0):  # only simplifies on right not 0-x
-            return simplified_left
-
-        return Sub(simplified_left, simplified_right)
-
-
-class Mul(BinOp):
-   
-    def deriv(self, item):
-        return Add(
-            Mul(self.left, self.right.deriv(item)),
-            Mul(self.right, self.left.deriv(item)),
-        )
-
-    def simplify(self):
-        simplified_left = self.left.simplify()
-        simplified_right = self.right.simplify()
-
-        if isinstance(simplified_left, Num) and isinstance(simplified_right, Num):
-            return Num(simplified_left.n * simplified_right.n)
-
-        if simplified_left == Num(1):  # mul by 1
-            return simplified_right
-        if simplified_right == Num(1):
-            return simplified_left
-
-        if simplified_left == Num(0) or simplified_right == Num(0):  # mul by 0
+I added this method to the following subclasses:<br/>
+1. Var:<br/>
+    
+        def deriv(self, item):
+            if self.name == item:  # base case 1
+                return Num(1)
             return Num(0)
 
-        return Mul(simplified_left, simplified_right)
+<br/>
+2. Num: <br/>
 
+        def deriv(self, item):
+            return Num(0)  # base case 2
+<br/>
 
-class Div(BinOp):
+3. Add:<br/>
+    
+        def deriv(self, item):
+            return Add(self.left.deriv(item), self.right.deriv(item))
+<br/>
+
+4. Subtraction: <br/>
    
-    def deriv(self, item):
-        return (
-            Sub(
-                Mul(self.right, self.left.deriv(item)),
+        def deriv(self, item):
+            return Sub(self.left.deriv(item), self.right.deriv(item))
+<br/>
+
+5. Multiplication:<br/>
+   
+        def deriv(self, item):
+            return Add(
                 Mul(self.left, self.right.deriv(item)),
+                Mul(self.right, self.left.deriv(item)),
             )
-        ) / Mul(
-            self.right, self.right
-        )  # square
+<br/>
 
-    def simplify(self):
-        simplified_left = self.left.simplify()
-        simplified_right = self.right.simplify()
+5. Division:<br/>
+   
+        def deriv(self, item):
+            return (
+                Sub(
+                    Mul(self.right, self.left.deriv(item)),
+                    Mul(self.left, self.right.deriv(item)),
+                )
+            ) / Mul(
+                self.right, self.right
+            )  # square
 
-        if isinstance(simplified_left, Num) and isinstance(simplified_right, Num):
-            return Num(simplified_left.n / simplified_right.n)
+<br/>
 
-        if simplified_right == Num(1):  # div by 1
-            return simplified_left
+6. Exponentiation:<br/>
 
-        if simplified_left == Num(0):  # div by 0
-            return Num(0)
-
-        return Div(simplified_left, simplified_right)
-
-
-class Pow(BinOp):
+        def deriv(self, item):
+            if isinstance(self.right, Num):
+                return Mul(
+                    Mul(self.right, Pow(self.left, self.right - 1)), self.left.deriv(item)
+                )
+            raise TypeError
+<br/>
     
-
-    def deriv(self, item):
-        if isinstance(self.right, Num):
-            return Mul(
-                Mul(self.right, Pow(self.left, self.right - 1)), self.left.deriv(item)
-            )
-        raise TypeError
-
-    def simplify(self):
-        simplified_left = self.left.simplify()
-        simplified_right = self.right.simplify()
-
-        if isinstance(simplified_left, Num) and isinstance(simplified_right, Num):
-            return Num(simplified_left.n**simplified_right.n)
-
-        if simplified_right == Num(0):
-            return Num(1)
-
-        if simplified_right == Num(1):
-            return simplified_left
-
-        if simplified_left == Num(0):
-            return simplified_left
-
-        return Pow(simplified_left, simplified_right)
-
 
