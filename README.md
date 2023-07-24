@@ -1,4 +1,4 @@
-<h1>Mines Lab</h1>
+<h1>Symbolic Algebra Lab</h1>
 <h2>Description</h2>
 <br />
 
