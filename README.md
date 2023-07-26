@@ -13,7 +13,7 @@ I'll start by implementing support for basic arithmetic (+, -, *, and /) on vari
 
 <p align="left">
 Create the BASE CLASS, 'Symbol':<br/>
-This class has a precedence of 0.All other classes created in this lab inherits from this class, and any behaviour that is common between all expressions (that is, all behaviour that is not unique to a particular kind of symbolic expression) is implemented here. Such behaviours include:<br/>
+This class has a precedence of 0. All other classes created in this lab inherits from this class, and any behaviour that is common between all expressions (that is, all behaviour that is not unique to a particular kind of symbolic expression) is implemented here. Such behaviours include:<br/>
 - addition & subtraction<br/>
 - multiplication & division<br/>
 - exponentiation<br/>
